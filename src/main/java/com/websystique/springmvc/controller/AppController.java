@@ -38,6 +38,10 @@ import com.websystique.springmvc.service.UserProfileService;
 import com.websystique.springmvc.service.UserService;
 import com.websystique.springmvc.util.FileValidator;
 
+import com.websystique.springmvc.model.NewsConten;
+
+import  com.websystique.springmvc.service.NewsService;
+
 
 
 @Controller
@@ -51,7 +55,8 @@ public class AppController {
 	UserDocumentService userDocumentService;
 	@Autowired
 	UserProfileService userProfileService;
-	
+	@Autowired
+	NewsService newsService;
 	@Autowired
 	MessageSource messageSource;
 
@@ -70,13 +75,15 @@ public class AppController {
 	/**
 	 * This method will list all existing users.
 	 */
-	@RequestMapping(value = { "/", "/list" }, method = RequestMethod.GET)
+	@RequestMapping(value = { "/", "/home" }, method = RequestMethod.GET)
 	public String listUsers(ModelMap model) {
 
-		List<User> users = userService.findAllUsers();
-		model.addAttribute("users", users);
+		List<NewsConten> news = newsService.findAllNews();
+ 		model.addAttribute("news", news);
+ 		List<UserDocument> listdocuments = userDocumentService.findAll();
+		model.addAttribute("listdocuments", listdocuments);
 		model.addAttribute("loggedinuser", getPrincipal());
-		return "userslist";
+		return "menu_home";
 	}
 
 	/**
@@ -243,7 +250,101 @@ public class AppController {
 	    final Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 	    return authenticationTrustResolver.isAnonymous(authentication);
 	}
+	  @RequestMapping(value = {"/managenews" }, method = RequestMethod.GET)
+	 	public String listNews(ModelMap model) {
+			List<NewsConten> news = newsService.findAllNews();
+	 		model.addAttribute("news", news);
+	 		List<UserDocument> listdocuments = userDocumentService.findAll();
+			model.addAttribute("listdocuments", listdocuments);
+	 		return "index";
+	 	}
+	    @RequestMapping(value = { "/newscontent" }, method = RequestMethod.GET)
+		public String newsContent(ModelMap model) {
+			NewsConten newlist = new NewsConten();
+			model.addAttribute("newlist", newlist);
+			List<NewsConten> news = newsService.findAllNews();
+	 		model.addAttribute("news", news);
+	 		List<UserDocument> listdocuments = userDocumentService.findAll();
+			model.addAttribute("listdocuments", listdocuments);
+	 		model.addAttribute("news", news);
+			model.addAttribute("edit", false);
+			return "ckeditor";
+		}
+	    @RequestMapping(value = { "/news-{Id}" }, method = RequestMethod.GET)
+		public String ListNews(@PathVariable String Id, ModelMap model) {
+	    	Integer idnews = Integer.parseInt(Id);
+			NewsConten newlist = newsService.findById(idnews);
+			model.addAttribute("newlist", newlist);
+			List<NewsConten> news = newsService.findAllNews();
+	 		model.addAttribute("news", news);
+	 		List<UserDocument> listdocuments = userDocumentService.findAll();
+			model.addAttribute("listdocuments", listdocuments);
+	 		List<UserDocument> documents = userDocumentService.findAllByUserId(idnews);
+			model.addAttribute("documents", documents);
+			return "NewsIfo";
+		}
+		@RequestMapping(value = { "/newscontent" }, method = RequestMethod.POST)
+		public String saveNews(NewsConten newspost, BindingResult result,
+				ModelMap model) {
 
+			if (result.hasErrors()) {
+				return "index";
+			}
+
+			newsService.saveNews(newspost);
+			
+			model.addAttribute("success", " comit successfully");
+			List<NewsConten> news = newsService.findAllNews();
+	 		model.addAttribute("news", news);
+	 		List<UserDocument> listdocuments = userDocumentService.findAll();
+			model.addAttribute("listdocuments", listdocuments);
+			//return "success";
+			return "index";
+		}
+		@RequestMapping(value = { "/edit-news-{Id}" }, method = RequestMethod.GET)
+		public String editNews(@PathVariable String Id, ModelMap model) {
+			Integer idnews = Integer.parseInt(Id);
+			NewsConten newlist = newsService.findById(idnews);
+			model.addAttribute("newlist", newlist);
+			
+			List<NewsConten> news = newsService.findAllNews();
+	 		List<UserDocument> listdocuments = userDocumentService.findAll();
+			model.addAttribute("listdocuments", listdocuments);
+	 		model.addAttribute("news", news);
+			model.addAttribute("edit", true);
+			return "ckeditor";
+		}
+		
+		/**
+		 * This method will be called on form submission, handling POST request for
+		 * updating user in database. It also validates the user input
+		 */
+		@RequestMapping(value = { "/edit-news-{Id}" }, method = RequestMethod.POST)
+		public String updateNews(@Valid NewsConten newspost, BindingResult result,
+					ModelMap model, @PathVariable String Id) {
+		
+				if (result.hasErrors()) {
+					return "index";
+				}
+		
+				newsService.updateNews(newspost);
+				List<NewsConten> news = newsService.findAllNews();
+		 		model.addAttribute("news", news);
+		 		List<UserDocument> listdocuments = userDocumentService.findAll();
+				model.addAttribute("listdocuments", listdocuments);
+				model.addAttribute("success", " updated successfully");
+				return "index";
+			}
+		@RequestMapping(value = { "/delete-news-{Id}" }, method = RequestMethod.GET)
+		public String deleteNews(@PathVariable Integer Id,ModelMap model) {
+			newsService.deleteNewByID(Id);
+			List<NewsConten> news = newsService.findAllNews();
+	 		model.addAttribute("news", news);
+	 		List<UserDocument> listdocuments = userDocumentService.findAll();
+			model.addAttribute("listdocuments", listdocuments);
+			model.addAttribute("success", " delete successfully");
+			return "index";
+		}
 	@RequestMapping(value = { "/add-document-{userId}" }, method = RequestMethod.GET)
 	public String addDocuments(@PathVariable int userId, ModelMap model) {
 		User user = userService.findById(userId);
