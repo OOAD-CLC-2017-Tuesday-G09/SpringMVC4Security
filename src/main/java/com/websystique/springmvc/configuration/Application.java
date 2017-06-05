@@ -17,13 +17,12 @@ import org.springframework.web.WebApplicationInitializer;
 import org.springframework.web.context.support.XmlWebApplicationContext;
 import org.springframework.web.servlet.DispatcherServlet;
 
-@SpringBootApplication()
-@ComponentScan()
+@SpringBootApplication(scanBasePackages = {"com.websystique.springmvc"})
+@ComponentScan(basePackages = "com.websystique.springmvc")
 @PropertySource(value = { "classpath:application.properties" })
 public class Application extends SpringBootServletInitializer {
 	static String RESOURCES_DIR;
 	public static void main(String[] args) {
-		RESOURCES_DIR = "/resources/";
 		SpringApplication.run(Application.class, args);
 	}
 	 @Override

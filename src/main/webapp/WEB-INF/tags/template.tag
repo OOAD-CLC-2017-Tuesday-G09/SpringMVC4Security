@@ -209,7 +209,7 @@
 												class="rmLink rmRootLink"> <span
 													class="rmText">Venue & Hotel</span>
 											</a></li>
-											<li class="rmItem rmLast" style="z-index: 0;"><a
+											<!-- <li class="rmItem rmLast" style="z-index: 0;"><a
 												href="#" class="rmLink rmRootLink"> <span
 													class="rmText rmExpandDown">More</span>
 											</a>
@@ -233,11 +233,17 @@
 														</a></li>
 													</ul>
 												</div></li>
-
+ -->
 											<li class="rmItem "><a href="managenews"
 												class="rmLink rmRootLink"> <span class="rmText">Manage
 														Ckeditor</span>
 											</a></li>
+										
+												<div class="authbar">
+													<li class="rmItem "><a href="logout"
+												class="rmLink rmRootLink"> <span class="rmText">Logout</span>
+												</div>
+
 										</ul>
 										<input
 											id="ctl06_portlet_800886a8-ccb5-40dd-813a-2c02ac0d2e92_RadMenu_ClientState"
@@ -293,7 +299,7 @@
 																<li>
 																	<h5 style="color: Red">${news.datepost}</h5> <a
 																	href="/news-${news.id}">
-																	<h5>${news.title}</h5>	
+																		<h5>${news.title}</h5>
 																</a>
 																</li>
 															</c:forEach>
@@ -399,7 +405,7 @@
 												</table>
 												<span
 													style="font-size: 10.5pt; letter-spacing: 0.85pt; font-family: &amp; amp;"><strong
-													style="font-weight: bold; color: #002060; font-family: &amp; amp; amp; amp; amp; amp; amp; quot; times new roman&amp;amp; amp; amp; amp; amp; amp; quot; , serif; font-size: 14px; letter-spacing: 1.13333px;"><strong><br />
+													style="font-weight: bold; color: #002060; font-family: &amp; amp; amp; amp; amp; amp; amp; amp; quot; times new roman&amp;amp; amp; amp; amp; amp; amp; amp; quot; , serif; font-size: 14px; letter-spacing: 1.13333px;"><strong><br />
 															<a
 															href="https://easychair.org/conferences/?conf=icsse2017specialsess"
 															target="_blank">SPECIAL SESSION SUBMISSION LINK</a>&nbsp;</strong></strong><br />
@@ -429,7 +435,7 @@
 															style="margin: 0px; padding: 0px; font-size: 20px;"><strong
 																style="margin: 0px; padding: 0px;"><span
 																	style="margin: 0px; padding: 0px; font-size: 14px; background-color: #ffff00; color: #002060;"><strong
-																		style="font-family: &amp; amp; amp; amp; amp; amp; amp; quot; times new roman&amp;amp; amp; amp; amp; amp; amp; quot; , serif; font-size: 14px; letter-spacing: 0.85pt; text-align: -webkit-center; background-color: #ffff00;"><span
+																		style="font-family: &amp; amp; amp; amp; amp; amp; amp; amp; quot; times new roman&amp;amp; amp; amp; amp; amp; amp; amp; quot; , serif; font-size: 14px; letter-spacing: 0.85pt; text-align: -webkit-center; background-color: #ffff00;"><span
 																			style="color: #002060;"><strong
 																				style="letter-spacing: 1.13333px;"><strong>SPECIAL
 																						SESSION&nbsp;</strong></strong></span></strong>02<br /> FUZZY SYSTEMS &amp; ITS
