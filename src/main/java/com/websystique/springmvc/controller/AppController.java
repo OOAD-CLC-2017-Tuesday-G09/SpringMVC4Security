@@ -1,12 +1,15 @@
 package com.websystique.springmvc.controller;
 
+
 import java.io.IOException;
+import java.security.Principal;
 import java.util.List;
 import java.util.Locale;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
+
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
@@ -15,12 +18,19 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.rememberme.PersistentTokenBasedRememberMeServices;
+import org.springframework.social.connect.ConnectionRepository;
+import org.springframework.social.facebook.api.Facebook;
+import org.springframework.social.facebook.api.PagedList;
+import org.springframework.social.facebook.api.Post;
 import org.springframework.stereotype.Controller;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.ui.Model;
 import org.springframework.ui.ModelMap;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.WebDataBinder;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.InitBinder;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -40,9 +50,7 @@ import com.websystique.springmvc.util.FileValidator;
 
 import com.websystique.springmvc.model.NewsConten;
 
-import  com.websystique.springmvc.service.NewsService;
-
-
+import com.websystique.springmvc.service.NewsService;
 
 @Controller
 @RequestMapping("/")
@@ -62,28 +70,59 @@ public class AppController {
 
 	@Autowired
 	PersistentTokenBasedRememberMeServices persistentTokenBasedRememberMeServices;
-	
+
 	@Autowired
 	AuthenticationTrustResolver authenticationTrustResolver;
-	
+
 	@Autowired
 	FileValidator fileValidator;
 	@InitBinder("fileBucket")
 	protected void initBinder(WebDataBinder binder) {
-	   binder.setValidator(fileValidator);
+		binder.setValidator(fileValidator);
 	}
+	  private Facebook facebook;
+	    private ConnectionRepository connectionRepository;
+
+	    public AppController(Facebook facebook, ConnectionRepository connectionRepository) {
+	        this.facebook = facebook;
+	        this.connectionRepository = connectionRepository;
+	    }
 	/**
 	 * This method will list all existing users.
 	 */
+	@RequestMapping("/user")
+	public Principal user(Principal principal) {
+		return principal;
+	}
+
 	@RequestMapping(value = { "/", "/home" }, method = RequestMethod.GET)
-	public String listUsers(ModelMap model) {
+	public String Home(ModelMap model) {
 
 		List<NewsConten> news = newsService.findAllNews();
- 		model.addAttribute("news", news);
- 		List<UserDocument> listdocuments = userDocumentService.findAll();
+		model.addAttribute("news", news);
+		List<UserDocument> listdocuments = userDocumentService.findAll();
 		model.addAttribute("listdocuments", listdocuments);
 		model.addAttribute("loggedinuser", getPrincipal());
 		return "menu_home";
+	}
+    @GetMapping
+    public String helloFacebook(Model model) {
+        if (connectionRepository.findPrimaryConnection(Facebook.class) == null) {
+            return "redirect:/connect/facebook";
+        }
+
+        model.addAttribute("facebookProfile", facebook.userOperations().getUserProfile());
+        PagedList<Post> feed = facebook.feedOperations().getFeed();
+        model.addAttribute("feed", feed);
+        return "menu_home";
+    }
+	@RequestMapping(value = { "/list" }, method = RequestMethod.GET)
+	public String listUsers(ModelMap model) {
+
+		List<User> users = userService.findAllUsers();
+		model.addAttribute("users", users);
+		model.addAttribute("loggedinuser", getPrincipal());
+		return "userslist";
 	}
 
 	/**
@@ -103,35 +142,37 @@ public class AppController {
 	 * saving user in database. It also validates the user input
 	 */
 	@RequestMapping(value = { "/newuser" }, method = RequestMethod.POST)
-	public String saveUser(@Valid User user, BindingResult result,
-			ModelMap model) {
+	public String saveUser(@Valid User user, BindingResult result, ModelMap model) {
 
 		if (result.hasErrors()) {
 			return "registration";
 		}
 
 		/*
-		 * Preferred way to achieve uniqueness of field [sso] should be implementing custom @Unique annotation 
-		 * and applying it on field [sso] of Model class [User].
+		 * Preferred way to achieve uniqueness of field [sso] should be
+		 * implementing custom @Unique annotation and applying it on field [sso]
+		 * of Model class [User].
 		 * 
-		 * Below mentioned peace of code [if block] is to demonstrate that you can fill custom errors outside the validation
-		 * framework as well while still using internationalized messages.
+		 * Below mentioned peace of code [if block] is to demonstrate that you
+		 * can fill custom errors outside the validation framework as well while
+		 * still using internationalized messages.
 		 * 
 		 */
-		if(!userService.isUserSSOUnique(user.getId(), user.getSsoId())){
-			FieldError ssoError =new FieldError("user","ssoId",messageSource.getMessage("non.unique.ssoId", new String[]{user.getSsoId()}, Locale.getDefault()));
-		    result.addError(ssoError);
+		if (!userService.isUserSSOUnique(user.getId(), user.getSsoId())) {
+			FieldError ssoError = new FieldError("user", "ssoId", messageSource.getMessage("non.unique.ssoId",
+					new String[] { user.getSsoId() }, Locale.getDefault()));
+			result.addError(ssoError);
 			return "registration";
 		}
-		
+
 		userService.saveUser(user);
 
-		model.addAttribute("success", "User " + user.getFirstName() + " "+ user.getLastName() + " registered successfully");
+		model.addAttribute("success",
+				"User " + user.getFirstName() + " " + user.getLastName() + " registered successfully");
 		model.addAttribute("loggedinuser", getPrincipal());
-		//return "success";
+		// return "success";
 		return "registrationsuccess";
 	}
-
 
 	/**
 	 * This method will provide the medium to update an existing user.
@@ -144,35 +185,37 @@ public class AppController {
 		model.addAttribute("loggedinuser", getPrincipal());
 		return "registration";
 	}
-	
+
 	/**
 	 * This method will be called on form submission, handling POST request for
 	 * updating user in database. It also validates the user input
 	 */
 	@RequestMapping(value = { "/edit-user-{ssoId}" }, method = RequestMethod.POST)
-	public String updateUser(@Valid User user, BindingResult result,
-			ModelMap model, @PathVariable String ssoId) {
+	public String updateUser(@Valid User user, BindingResult result, ModelMap model, @PathVariable String ssoId) {
 
 		if (result.hasErrors()) {
 			return "registration";
 		}
 
-		/*//Uncomment below 'if block' if you WANT TO ALLOW UPDATING SSO_ID in UI which is a unique key to a User.
-		if(!userService.isUserSSOUnique(user.getId(), user.getSsoId())){
-			FieldError ssoError =new FieldError("user","ssoId",messageSource.getMessage("non.unique.ssoId", new String[]{user.getSsoId()}, Locale.getDefault()));
-		    result.addError(ssoError);
-			return "registration";
-		}*/
-
+		/*
+		 * //Uncomment below 'if block' if you WANT TO ALLOW UPDATING SSO_ID in
+		 * UI which is a unique key to a User.
+		 * if(!userService.isUserSSOUnique(user.getId(), user.getSsoId())){
+		 * FieldError ssoError =new
+		 * FieldError("user","ssoId",messageSource.getMessage(
+		 * "non.unique.ssoId", new String[]{user.getSsoId()},
+		 * Locale.getDefault())); result.addError(ssoError); return
+		 * "registration"; }
+		 */
 
 		userService.updateUser(user);
 
-		model.addAttribute("success", "User " + user.getFirstName() + " "+ user.getLastName() + " updated successfully");
+		model.addAttribute("success",
+				"User " + user.getFirstName() + " " + user.getLastName() + " updated successfully");
 		model.addAttribute("loggedinuser", getPrincipal());
 		return "registrationsuccess";
 	}
 
-	
 	/**
 	 * This method will delete an user by it's SSOID value.
 	 */
@@ -181,7 +224,6 @@ public class AppController {
 		userService.deleteUserBySSO(ssoId);
 		return "redirect:/home";
 	}
-	
 
 	/**
 	 * This method will provide UserProfile list to views
@@ -190,7 +232,7 @@ public class AppController {
 	public List<UserProfile> initializeProfiles() {
 		return userProfileService.findAll();
 	}
-	
+
 	/**
 	 * This method handles Access-Denied redirect.
 	 */
@@ -201,27 +243,28 @@ public class AppController {
 	}
 
 	/**
-	 * This method handles login GET requests.
-	 * If users is already logged-in and tries to goto login page again, will be redirected to list page.
+	 * This method handles login GET requests. If users is already logged-in and
+	 * tries to goto login page again, will be redirected to list page.
 	 */
 	@RequestMapping(value = "/login", method = RequestMethod.GET)
 	public String loginPage() {
 		if (isCurrentAuthenticationAnonymous()) {
 			return "login";
-	    } else {
-	    	return "redirect:/list";  
-	    }
+		} else {
+			return "redirect:/home";
+		}
 	}
 
 	/**
-	 * This method handles logout requests.
-	 * Toggle the handlers if you are RememberMe functionality is useless in your app.
+	 * This method handles logout requests. Toggle the handlers if you are
+	 * RememberMe functionality is useless in your app.
 	 */
-	@RequestMapping(value="/logout", method = RequestMethod.GET)
-	public String logoutPage (HttpServletRequest request, HttpServletResponse response){
+	@RequestMapping(value = "/logout", method = RequestMethod.GET)
+	public String logoutPage(HttpServletRequest request, HttpServletResponse response) {
 		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-		if (auth != null){    
-			//new SecurityContextLogoutHandler().logout(request, response, auth);
+		if (auth != null) {
+			// new SecurityContextLogoutHandler().logout(request, response,
+			// auth);
 			persistentTokenBasedRememberMeServices.logout(request, response, auth);
 			SecurityContextHolder.getContext().setAuthentication(null);
 		}
@@ -231,137 +274,146 @@ public class AppController {
 	/**
 	 * This method returns the principal[user-name] of logged-in user.
 	 */
-	private String getPrincipal(){
+	private String getPrincipal() {
 		String userName = null;
 		Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
 		if (principal instanceof UserDetails) {
-			userName = ((UserDetails)principal).getUsername();
+			userName = ((UserDetails) principal).getUsername();
 		} else {
 			userName = principal.toString();
 		}
 		return userName;
 	}
-	
+
 	/**
-	 * This method returns true if users is already authenticated [logged-in], else false.
+	 * This method returns true if users is already authenticated [logged-in],
+	 * else false.
 	 */
 	private boolean isCurrentAuthenticationAnonymous() {
-	    final Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-	    return authenticationTrustResolver.isAnonymous(authentication);
+		final Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+		return authenticationTrustResolver.isAnonymous(authentication);
 	}
-	  @RequestMapping(value = {"/managenews" }, method = RequestMethod.GET)
-	 	public String listNews(ModelMap model) {
-			List<NewsConten> news = newsService.findAllNews();
-	 		model.addAttribute("news", news);
-	 		List<UserDocument> listdocuments = userDocumentService.findAll();
-			model.addAttribute("listdocuments", listdocuments);
-	 		return "index";
-	 	}
-	    @RequestMapping(value = { "/newscontent" }, method = RequestMethod.GET)
-		public String newsContent(ModelMap model) {
-			NewsConten newlist = new NewsConten();
-			model.addAttribute("newlist", newlist);
-			List<NewsConten> news = newsService.findAllNews();
-	 		model.addAttribute("news", news);
-	 		List<UserDocument> listdocuments = userDocumentService.findAll();
-			model.addAttribute("listdocuments", listdocuments);
-	 		model.addAttribute("news", news);
-			model.addAttribute("edit", false);
-			return "ckeditor";
-		}
-	    @RequestMapping(value = { "/news-{Id}" }, method = RequestMethod.GET)
-		public String ListNews(@PathVariable String Id, ModelMap model) {
-	    	Integer idnews = Integer.parseInt(Id);
-			NewsConten newlist = newsService.findById(idnews);
-			model.addAttribute("newlist", newlist);
-			List<NewsConten> news = newsService.findAllNews();
-	 		model.addAttribute("news", news);
-	 		List<UserDocument> listdocuments = userDocumentService.findAll();
-			model.addAttribute("listdocuments", listdocuments);
-	 		List<UserDocument> documents = userDocumentService.findAllByUserId(idnews);
-			model.addAttribute("documents", documents);
-			return "NewsIfo";
-		}
-		@RequestMapping(value = { "/newscontent" }, method = RequestMethod.POST)
-		public String saveNews(NewsConten newspost, BindingResult result,
-				ModelMap model) {
 
-			if (result.hasErrors()) {
-				return "index";
-			}
+	@RequestMapping(value = { "/managenews" }, method = RequestMethod.GET)
+	public String listNews(ModelMap model) {
+		List<NewsConten> news = newsService.findAllNews();
+		model.addAttribute("news", news);
+		List<UserDocument> listdocuments = userDocumentService.findAll();
+		model.addAttribute("listdocuments", listdocuments);
+		return "index";
+	}
 
-			newsService.saveNews(newspost);
-			
-			model.addAttribute("success", " comit successfully");
-			List<NewsConten> news = newsService.findAllNews();
-	 		model.addAttribute("news", news);
-	 		List<UserDocument> listdocuments = userDocumentService.findAll();
-			model.addAttribute("listdocuments", listdocuments);
-			//return "success";
+	@RequestMapping(value = { "/newscontent" }, method = RequestMethod.GET)
+	public String newsContent(ModelMap model) {
+		NewsConten newlist = new NewsConten();
+		model.addAttribute("newlist", newlist);
+		List<NewsConten> news = newsService.findAllNews();
+		model.addAttribute("news", news);
+		List<UserDocument> listdocuments = userDocumentService.findAll();
+		model.addAttribute("listdocuments", listdocuments);
+		model.addAttribute("news", news);
+		model.addAttribute("edit", false);
+		return "ckeditor";
+	}
+
+	@RequestMapping(value = { "/news-{Id}" }, method = RequestMethod.GET)
+	public String ListNews(@PathVariable String Id, ModelMap model) {
+		Integer idnews = Integer.parseInt(Id);
+		NewsConten newlist = newsService.findById(idnews);
+		model.addAttribute("newlist", newlist);
+		List<NewsConten> news = newsService.findAllNews();
+		model.addAttribute("news", news);
+		List<UserDocument> listdocuments = userDocumentService.findAll();
+		model.addAttribute("listdocuments", listdocuments);
+		List<UserDocument> documents = userDocumentService.findAllByUserId(idnews);
+		model.addAttribute("documents", documents);
+		return "NewsIfo";
+	}
+
+	@RequestMapping(value = { "/newscontent" }, method = RequestMethod.POST)
+	public String saveNews(NewsConten newspost, BindingResult result, ModelMap model) {
+
+		if (result.hasErrors()) {
 			return "index";
 		}
-		@RequestMapping(value = { "/edit-news-{Id}" }, method = RequestMethod.GET)
-		public String editNews(@PathVariable String Id, ModelMap model) {
-			Integer idnews = Integer.parseInt(Id);
-			NewsConten newlist = newsService.findById(idnews);
-			model.addAttribute("newlist", newlist);
-			
-			List<NewsConten> news = newsService.findAllNews();
-	 		List<UserDocument> listdocuments = userDocumentService.findAll();
-			model.addAttribute("listdocuments", listdocuments);
-	 		model.addAttribute("news", news);
-			model.addAttribute("edit", true);
-			return "ckeditor";
-		}
-		
-		/**
-		 * This method will be called on form submission, handling POST request for
-		 * updating user in database. It also validates the user input
-		 */
-		@RequestMapping(value = { "/edit-news-{Id}" }, method = RequestMethod.POST)
-		public String updateNews(@Valid NewsConten newspost, BindingResult result,
-					ModelMap model, @PathVariable String Id) {
-		
-				if (result.hasErrors()) {
-					return "index";
-				}
-		
-				newsService.updateNews(newspost);
-				List<NewsConten> news = newsService.findAllNews();
-		 		model.addAttribute("news", news);
-		 		List<UserDocument> listdocuments = userDocumentService.findAll();
-				model.addAttribute("listdocuments", listdocuments);
-				model.addAttribute("success", " updated successfully");
-				return "index";
-			}
-		@RequestMapping(value = { "/delete-news-{Id}" }, method = RequestMethod.GET)
-		public String deleteNews(@PathVariable Integer Id,ModelMap model) {
-			newsService.deleteNewByID(Id);
-			List<NewsConten> news = newsService.findAllNews();
-	 		model.addAttribute("news", news);
-	 		List<UserDocument> listdocuments = userDocumentService.findAll();
-			model.addAttribute("listdocuments", listdocuments);
-			model.addAttribute("success", " delete successfully");
+
+		newsService.saveNews(newspost);
+
+		model.addAttribute("success", " comit successfully");
+		List<NewsConten> news = newsService.findAllNews();
+		model.addAttribute("news", news);
+		List<UserDocument> listdocuments = userDocumentService.findAll();
+		model.addAttribute("listdocuments", listdocuments);
+		// return "success";
+		return "index";
+	}
+
+	@RequestMapping(value = { "/edit-news-{Id}" }, method = RequestMethod.GET)
+	public String editNews(@PathVariable String Id, ModelMap model) {
+		Integer idnews = Integer.parseInt(Id);
+		NewsConten newlist = newsService.findById(idnews);
+		model.addAttribute("newlist", newlist);
+
+		List<NewsConten> news = newsService.findAllNews();
+		List<UserDocument> listdocuments = userDocumentService.findAll();
+		model.addAttribute("listdocuments", listdocuments);
+		model.addAttribute("news", news);
+		model.addAttribute("edit", true);
+		return "ckeditor";
+	}
+
+	/**
+	 * This method will be called on form submission, handling POST request for
+	 * updating user in database. It also validates the user input
+	 */
+	@RequestMapping(value = { "/edit-news-{Id}" }, method = RequestMethod.POST)
+	public String updateNews(@Valid NewsConten newspost, BindingResult result, ModelMap model,
+			@PathVariable String Id) {
+
+		if (result.hasErrors()) {
 			return "index";
 		}
-	@RequestMapping(value = { "/add-document-{userId}" }, method = RequestMethod.GET)
-	public String addDocuments(@PathVariable int userId, ModelMap model) {
-		User user = userService.findById(userId);
-		model.addAttribute("user", user);
 
+		newsService.updateNews(newspost);
+		List<NewsConten> news = newsService.findAllNews();
+		model.addAttribute("news", news);
+		List<UserDocument> listdocuments = userDocumentService.findAll();
+		model.addAttribute("listdocuments", listdocuments);
+		model.addAttribute("success", " updated successfully");
+		return "index";
+	}
+
+	@RequestMapping(value = { "/delete-news-{Id}" }, method = RequestMethod.GET)
+	public String deleteNews(@PathVariable Integer Id, ModelMap model) {
+		newsService.deleteNewByID(Id);
+		List<NewsConten> news = newsService.findAllNews();
+		model.addAttribute("news", news);
+		List<UserDocument> listdocuments = userDocumentService.findAll();
+		model.addAttribute("listdocuments", listdocuments);
+		model.addAttribute("success", " delete successfully");
+		return "index";
+	}
+
+	@RequestMapping(value = { "/add-document-{newsId}" }, method = RequestMethod.GET)
+	public String addDocuments(@PathVariable int newsId, ModelMap model) {
+		NewsConten newslist = newsService.findById(newsId);
+		model.addAttribute("newslist", newslist);
+		List<NewsConten> news = newsService.findAllNews();
+ 		model.addAttribute("news", news);
 		FileBucket fileModel = new FileBucket();
 		model.addAttribute("fileBucket", fileModel);
-
-		List<UserDocument> documents = userDocumentService.findAllByUserId(userId);
+			
+		List<UserDocument> documents = userDocumentService.findAllByNewsId(newsId);
 		model.addAttribute("documents", documents);
-		
+		List<UserDocument> listdocuments = userDocumentService.findAll();
+		model.addAttribute("listdocuments", listdocuments);
 		return "managedocuments";
 	}
 	
 
-	@RequestMapping(value = { "/download-document-{userId}-{docId}" }, method = RequestMethod.GET)
-	public String downloadDocument(@PathVariable int userId, @PathVariable int docId, HttpServletResponse response) throws IOException {
+	@RequestMapping(value = { "/download-document-{newsId}-{docId}" }, method = RequestMethod.GET)
+	public String downloadDocument(@PathVariable String newsId, @PathVariable int docId, HttpServletResponse response) throws IOException {
 		UserDocument document = userDocumentService.findById(docId);
 		response.setContentType(document.getType());
         response.setContentLength(document.getContent().length);
@@ -369,24 +421,26 @@ public class AppController {
  
         FileCopyUtils.copy(document.getContent(), response.getOutputStream());
  
- 		return "redirect:/add-document-"+userId;
+ 		return "redirect:/add-document-"+newsId;
 	}
 
-	@RequestMapping(value = { "/delete-document-{userId}-{docId}" }, method = RequestMethod.GET)
-	public String deleteDocument(@PathVariable int userId, @PathVariable int docId) {
+	@RequestMapping(value = { "/delete-document-{newsId}-{docId}" }, method = RequestMethod.GET)
+	public String deleteDocument(@PathVariable int newsId, @PathVariable int docId) {
 		userDocumentService.deleteById(docId);
-		return "redirect:/add-document-"+userId;
+		return "redirect:/add-document-"+newsId;
 	}
 
-	@RequestMapping(value = { "/add-document-{userId}" }, method = RequestMethod.POST)
-	public String uploadDocument(@Valid FileBucket fileBucket, BindingResult result, ModelMap model, @PathVariable int userId) throws IOException{
+	@RequestMapping(value = { "/add-document-{newsId}" }, method = RequestMethod.POST)
+	public String uploadDocument(@Valid FileBucket fileBucket, BindingResult result, ModelMap model, @PathVariable int newsId) throws IOException{
 		
 		if (result.hasErrors()) {
 			System.out.println("validation errors");
-			User user = userService.findById(userId);
-			model.addAttribute("user", user);
+			NewsConten newslist = newsService.findById(newsId);
+			model.addAttribute("newslist", newslist);
+			List<NewsConten> news = newsService.findAllNews();
+	 		model.addAttribute("news", news);
 
-			List<UserDocument> documents = userDocumentService.findAllByUserId(userId);
+			List<UserDocument> documents = userDocumentService.findAllByNewsId(newsId);
 			model.addAttribute("documents", documents);
 			
 			return "managedocuments";
@@ -394,16 +448,18 @@ public class AppController {
 			
 			System.out.println("Fetching file");
 			
-			User user = userService.findById(userId);
-			model.addAttribute("user", user);
+			NewsConten newslist = newsService.findById(newsId);
+			model.addAttribute("newslist", newslist);
+			List<NewsConten> news = newsService.findAllNews();
+	 		model.addAttribute("news", news);
 
-			saveDocument(fileBucket, user);
+			saveDocument(fileBucket, newslist);
 
-			return "redirect:/add-document-"+userId;
+			return "redirect:/add-document-"+newsId;
 		}
 	}
 	
-	private void saveDocument(FileBucket fileBucket, User user) throws IOException{
+	private void saveDocument(FileBucket fileBucket, NewsConten news) throws IOException{
 		
 		UserDocument document = new UserDocument();
 		
@@ -413,7 +469,7 @@ public class AppController {
 		document.setDescription(fileBucket.getDescription());
 		document.setType(multipartFile.getContentType());
 		document.setContent(multipartFile.getBytes());
-		document.setUser(user);
+		document.setNews(news);
 		userDocumentService.saveDocument(document);
 	}
 }

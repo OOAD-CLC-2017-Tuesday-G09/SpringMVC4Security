@@ -2,9 +2,9 @@
 	pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@taglib prefix="t" tagdir="/WEB-INF/tags"%>
-<!-- <script type="text/javascript" src="/resources/ckeditor/ckeditor.js"></script> -->
-<script src="//cdn.ckeditor.com/4.6.2/full/ckeditor.js"></script>
-<t:template>
+<script type="text/javascript" src="/resources/ckeditor/ckeditor.js"></script>
+<%@ taglib prefix="form" uri="http://www.springframework.org/tags/form"%>
+		  <t:template>
 	<jsp:body>
 		  	<div class="panel-heading">
 					<span class="lead">List of Documents </span>
@@ -65,10 +65,8 @@
 						<div class="form-group col-md-12">
 							<label class="col-md-3 control-lable" for="file">Description</label>
 							<div class="col-md-9">
-							    <textarea class="ckeditor" path="description"
-									name="description" cols="30" rows="20">
-            ${newlist.content}
-       </textarea>
+							    <form:input path="description"
+									name="description"  class="form-control input-sm" />
 
 							</div>
 							

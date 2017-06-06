@@ -27,7 +27,9 @@ public class UserDocumentServiceImpl implements UserDocumentService{
 	public List<UserDocument> findAllByUserId(int userId) {
 		return dao.findAllByUserId(userId);
 	}
-	
+	public List<UserDocument> findAllByNewsId(int userId) {
+		return dao.findAllByNewsId(userId);
+	}
 	public void saveDocument(UserDocument document){
 		dao.save(document);
 	}

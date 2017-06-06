@@ -4,7 +4,7 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@taglib prefix="t" tagdir="/WEB-INF/tags"%>
 
-		<link href="/resources/CSS/login.css" rel="stylesheet"/>
+<link href="/resources/CSS/login.css" rel="stylesheet" />
 <link rel="stylesheet" type="text/css"
 	href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.2.0/css/font-awesome.css" />
 
@@ -17,7 +17,8 @@
 						<h1 style="color: blue">Login</h1>
 						<br>
 						<c:url var="loginUrl" value="/login" />
-						<form action="${loginUrl}" name ="myform" method="post" class="form-horizontal">
+						<form action="${loginUrl}" name="myform" method="post"
+							class="form-horizontal">
 							<c:if test="${param.error != null}">
 								<div class="alert alert-danger">
 									<p>Invalid username and password.</p>
@@ -54,9 +55,16 @@
 									class="btn btn-block btn-primary btn-default" value="Log in">
 							</div>
 						</form>
+						
+					<li><a href="user">Login with Google</a></li>
+					<li>
+					</li>
 					</div>
 				</div>
 			</div>
 		</div>
+							<form action="/connect/facebook" method="POST">
+			<input type="hidden" name="scope" value="user_posts" />
+			<p><button type="submit" class="btn btn-block btn-primary btn-default">Connect to Facebook</button></p>
 </jsp:body>
 </t:template>

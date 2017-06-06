@@ -33,7 +33,14 @@ public class UserDocumentDaoImpl extends AbstractDao<Integer, UserDocument> impl
 		userCriteria.add(Restrictions.eq("id", userId));
 		return (List<UserDocument>)crit.list();
 	}
-
+	 
+    @SuppressWarnings("unchecked")
+    public List<UserDocument> findAllByNewsId(int newsId){
+        Criteria crit = createEntityCriteria();
+        Criteria userCriteria = crit.createCriteria("news");
+        userCriteria.add(Restrictions.eq("id", newsId));
+        return (List<UserDocument>)crit.list();
+    }
 	
 	public void deleteById(int id) {
 		UserDocument document =  getByKey(id);

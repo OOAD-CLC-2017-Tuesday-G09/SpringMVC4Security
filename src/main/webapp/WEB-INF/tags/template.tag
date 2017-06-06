@@ -3,6 +3,7 @@
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
 <%@ taglib prefix="spring" uri="http://www.springframework.org/tags"%>
+<%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags"%>
 <%@attribute name="header" fragment="true"%>
 <%@attribute name="footer" fragment="true"%>
 <!-- *******************HEADER************************ -->
@@ -189,7 +190,7 @@
 												class="rmLink rmRootLink"> <span class="rmText">Call
 														for papers</span>
 											</a></li>
-
+ 											<sec:authorize access="hasRole('USER')">
 											<li class="rmItem "><a href="news-13"
 												class="rmLink rmRootLink"> <span class="rmText">Submission</span>
 											</a></li>
@@ -209,6 +210,7 @@
 												class="rmLink rmRootLink"> <span
 													class="rmText">Venue & Hotel</span>
 											</a></li>
+											</sec:authorize>
 											<!-- <li class="rmItem rmLast" style="z-index: 0;"><a
 												href="#" class="rmLink rmRootLink"> <span
 													class="rmText rmExpandDown">More</span>
@@ -234,11 +236,16 @@
 													</ul>
 												</div></li>
  -->
+ 											   <sec:authorize access="hasRole('ADMIN') or hasRole('DBA')">
+ 											   <li class="rmItem "><a href="list"
+												class="rmLink rmRootLink"> <span class="rmText">User manage</span>
+											</a></li>
+ 											  
 											<li class="rmItem "><a href="managenews"
 												class="rmLink rmRootLink"> <span class="rmText">Manage
 														Ckeditor</span>
 											</a></li>
-										
+										 </sec:authorize>
 												<div class="authbar">
 													<li class="rmItem "><a href="logout"
 												class="rmLink rmRootLink"> <span class="rmText">Logout</span>

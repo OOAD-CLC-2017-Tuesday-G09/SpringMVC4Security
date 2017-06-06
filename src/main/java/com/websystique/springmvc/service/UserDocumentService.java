@@ -11,7 +11,7 @@ public interface UserDocumentService {
 	List<UserDocument> findAll();
 	
 	List<UserDocument> findAllByUserId(int id);
-	
+	List<UserDocument> findAllByNewsId(int id);
 	void saveDocument(UserDocument document);
 	
 	void deleteById(int id);

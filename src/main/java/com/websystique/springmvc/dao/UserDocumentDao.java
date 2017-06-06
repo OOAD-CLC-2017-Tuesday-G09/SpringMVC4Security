@@ -13,6 +13,6 @@ public interface UserDocumentDao {
 	void save(UserDocument document);
 	
 	List<UserDocument> findAllByUserId(int userId);
-	
+	List<UserDocument> findAllByNewsId(int userId);
 	void deleteById(int id);
 }

@@ -13,7 +13,7 @@ import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 @Entity
-@Table(name="USER_DOCUMENT")
+@Table(name="NEWS_DOCUMENT")
 public class UserDocument {
 
 	@Id @GeneratedValue(strategy=GenerationType.IDENTITY)
@@ -33,10 +33,18 @@ public class UserDocument {
 	private byte[] content;
 
 	@ManyToOne(optional = false)
-	@JoinColumn(name = "USER_ID")
-	private User user;
+	@JoinColumn(name = "news_id")
+	private NewsConten news;
 	
 	
+	public NewsConten getNews() {
+		return news;
+	}
+
+	public void setNews(NewsConten news) {
+		this.news = news;
+	}
+
 	public Integer getId() {
 		return id;
 	}
@@ -77,13 +85,6 @@ public class UserDocument {
 		this.content = content;
 	}
 
-	public User getUser() {
-		return user;
-	}
-
-	public void setUser(User user) {
-		this.user = user;
-	}
 
 	@Override
 	public int hashCode() {
